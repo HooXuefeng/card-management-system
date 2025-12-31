@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: card-backend
+  # 数据库配置（使用新创建的用户）
+  datasource:
+    url: jdbc:mysql://localhost:3306/card_system?useSSL=false&serverTimezone=Asia/Shanghai
+    username: cardapp
+    password: cardapp123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
+      max-lifetime: 1800000
+      pool-name: CardHikariCP
+  # Redis配置（保持你的原有配置）
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  # 静态资源配置：核心！确保能加载前端打包后的文件
+  web:
+    resources:
+      static-locations: classpath:/static/ # 前端文件放在static目录下
+      add-mappings: true # 开启静态资源映射
+      cache:
+        cachecontrol:
+          max-age: 0 # 关闭缓存，方便调试
+
+# 日志配置：用于调试数据库连接问题
+logging:
+  level:
+    org.springframework.jdbc.datasource: DEBUG
+    com.zaxxer.hikari: DEBUG
+    java.sql: DEBUG
+    org.springframework.transaction: DEBUG
+
+# 服务器配置：核心！context-path必须为/api，和前端base一致
+server:
+  port: 8080
+  servlet:
+    context-path: /api # 后端上下文路径，和前端base:/api/匹配
+  tomcat:
+    uri-encoding: UTF-8 # 解决中文乱码

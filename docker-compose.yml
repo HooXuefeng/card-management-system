@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: card-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: card_system
+      MYSQL_USER: carduser
+      MYSQL_PASSWORD: cardpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - card-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: card-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - card-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ./card-backend
+      dockerfile: Dockerfile
+    container_name: card-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/card_system?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: carduser
+      SPRING_DATASOURCE_PASSWORD: cardpass
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - card-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./card-frontend
+      dockerfile: Dockerfile
+    container_name: card-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - card-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  card-network:
+    driver: bridge
